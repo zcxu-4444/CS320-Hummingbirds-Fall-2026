@@ -3,7 +3,7 @@ Repository for Team Hummingbirds in CS320 @ UMass Amherst
 
 Massachusetts' smallest breeding bird is also one of our most beautiful. The male Ruby-throated Hummingbird is unmistakable, with glossy green feathers above and a stunning gorget that glitters like its namesake.  
 Even the females are easily identified, for this species is the only hummingbird that commonly appears in Massachusetts. 
-Ruby-throated hummingbird is the only hummingbird that nests in the eastern United States. There are a few others that can occur in extremely small numbers in the late fall, but they are really rare.   
+Ruby-throated hummingbird is the only hummingbird that nests in the eastern United States. There are a few others that can occur in extremely small numbers in the late fall, but they are really rare.   Noah Lev Bartell-Mangel
 Ruby-throated hummingbirds are small, vibrant birds with distinctive features that make them easily recognizable. Adult males have a brilliant iridescent green back and crown, with a vibrant ruby-red throat patch that shimmers in the sunlight. 
 Their underparts are a crisp white, contrasting sharply with the green upperparts. 
 In flight, their wings beat rapidly, creating a distinct buzzing sound. 
