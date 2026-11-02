@@ -1,13 +1,14 @@
 import type { Route } from "./+types/home";
 import { Welcome } from "../welcome/welcome";
+import { isLoggedIn } from "~/logic";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "Activifind" },
+    { name: "description", content: "Welcome to Activifind!" },
   ];
 }
 
 export default function Home() {
-  return <Welcome />;
+  return isLoggedIn() ? <>...Discover...</> : <Welcome />;
 }
