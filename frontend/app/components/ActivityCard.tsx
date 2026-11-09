@@ -1,13 +1,14 @@
 import {
   Button,
   Card,
-  CardActionArea,
+  CardActions,
   CardContent,
   Typography,
 } from "@mui/material";
-import type { Activity } from "~/logic";
+import { joinedActivities, type Activity } from "~/logic";
 
 export default function ActivityCard({ activity }: { activity: Activity }) {
+  const joined = joinedActivities().includes(activity.id);
   return (
     <Card sx={{ width: "100%" }}>
       <CardContent>
@@ -20,13 +21,19 @@ export default function ActivityCard({ activity }: { activity: Activity }) {
           </Typography>
         )}
       </CardContent>
-      <CardActionArea
+      <CardActions
         sx={{ display: "flex", justifyContent: "flex-end", padding: 1 }}
       >
-        <Button variant="contained" color="primary">
-          Join
-        </Button>
-      </CardActionArea>
+        {joined ? (
+          <Button variant="contained" color="error">
+            Leave
+          </Button>
+        ) : (
+          <Button variant="contained" color="primary">
+            Join
+          </Button>
+        )}
+      </CardActions>
     </Card>
   );
 }

@@ -1,3 +1,12 @@
+export type Profile = {
+  id: Uuid;
+  email: string;
+  full_name?: string;
+  bio?: string;
+  interests?: number;
+  created_at?: Date;
+};
+
 export type Activity = {
   id: Uuid;
   host_id: Uuid;
@@ -15,12 +24,27 @@ export type Activity = {
 export type Uuid = string;
 
 export function isLoggedIn(): boolean {
-  // TODO: implement auth
-  return true;
+  return currentUser() !== null;
+}
+
+export function currentUser(): Profile | null {
+  // TODO: return real data
+  return {
+    id: "1",
+    email: "samtheminuteman@umass.edu",
+    full_name: "Sam the Minuteman",
+    bio: "I'm the UMass mascot.",
+    created_at: new Date("2026-11-08T14:00:00Z"),
+  };
+}
+
+export function joinedActivities(): Uuid[] {
+  // TODO: return real data. this should be a query.
+  return ["1"];
 }
 
 export function allActivities(): Activity[] {
-  // TODO: return real data
+  // TODO: return real data. this should be a query.
   return [
     {
       id: "1",
