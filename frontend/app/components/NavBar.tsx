@@ -38,9 +38,6 @@ export function NavBar() {
               <Button component={Link} to="/create-activity">
                 Create activity
               </Button>
-              <Button component={Link} to="/friends">
-                Friends
-              </Button>
               <IconButton component={Link} to="/profile">
                 <Avatar />
               </IconButton>
