@@ -1,4 +1,5 @@
 import type { Route } from "./+types/home";
+import { Discover } from "../discover/discover";
 import { Welcome } from "../welcome/welcome";
 import { isLoggedIn } from "~/logic";
 
@@ -10,5 +11,5 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
-  return isLoggedIn() ? <>...Discover...</> : <Welcome />;
+  return isLoggedIn() ? <Discover /> : <Welcome />;
 }
