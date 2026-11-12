@@ -1,6 +1,104 @@
 import type { Route } from "./+types/api.activities";
 import { getSupabaseForRequest } from "~/lib/supabase.server";
 
+// GET /api/activities: list public, upcoming activities
+export async function loader({ request }: Route.LoaderArgs) {
+  const url = new URL(request.url);
+
+  // Read optional filters from the URL
+  const category = url.searchParams.get("category");
+  const search = url.searchParams.get("search");
+  const limitParam = url.searchParams.get("limit");
+
+  // Default to 20 activities, maximum 100
+  const limit = limitParam === null ? 20 : Number(limitParam);
+
+  if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+    return Response.json(
+      {
+        error: {
+          code: "INVALID_INPUT",
+          message: "limit must be an integer between 1 and 100",
+        },
+      },
+      { status: 400 }
+    );
+  }
+
+  // Reuse Yash's authentication helper
+  const auth = await getSupabaseForRequest(request);
+
+  if (!auth) {
+    return Response.json(
+      {
+        error: {
+          code: "NOT_AUTHENTICATED",
+          message: "Missing or invalid token",
+        },
+      },
+      { status: 401 }
+    );
+  }
+
+  let query = auth.supabase
+    .from("activities")
+    .select(`
+      id,
+      host_id,
+      title,
+      description,
+      category,
+      location_name,
+      start_time,
+      capacity,
+      status,
+      created_at,
+      host:profiles!activities_host_id_fkey(full_name),
+      activity_members(count)
+    `)
+    .eq("is_private", false)
+    .eq("status", "open")
+    .gte("start_time", new Date().toISOString())
+    .order("start_time", { ascending: true })
+    .limit(limit);
+
+  if (category) {
+    query = query.eq("category", category);
+  }
+
+  if (search) {
+    query = query.ilike("title", `%${search}%`);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("getAllActivities failed:", error);
+
+    return Response.json(
+      {
+        error: {
+          code: "SERVER_ERROR",
+          message: "Failed to retrieve activities",
+        },
+      },
+      { status: 500 }
+    );
+  }
+
+  const activities = (data ?? []).map((activity) => {
+    const { host, activity_members, ...fields } = activity;
+
+    return {
+      ...fields,
+      host_name: host?.[0]?.full_name ?? null,
+      member_count: activity_members?.[0]?.count ?? 0,
+    };
+  });
+
+  return Response.json({ activities });
+}
+
 // POST /api/activities: creates an activity with the signed-in user as the host
 export async function action({ request }: Route.ActionArgs) {
   // 1. only allow POST
