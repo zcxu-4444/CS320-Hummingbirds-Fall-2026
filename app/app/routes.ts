@@ -7,4 +7,6 @@ export default [
   route("profile", "routes/profile.tsx"),
   // API
   route("api/activities", "routes/api.activities.ts"),
+  route("api/activities/:id", "routes/api.activities.$id.ts"),
+  route("api/activities/:id/cancel", "routes/api.activities.$id.cancel.ts"),
 ] satisfies RouteConfig;
