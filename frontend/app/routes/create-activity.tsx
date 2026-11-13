@@ -1,4 +1,14 @@
+import { requireAuth } from "~/auth.server";
 import type { Route } from "./+types/create-activity";
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const { user, responseHeaders } = await requireAuth(request);
+
+  return Response.json(
+    {userId: user.id},
+    {headers: responseHeaders},
+  );
+}
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -8,5 +18,5 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function CreateActivity() {
-  return <></>;
+  return <h1>Create Activity</h1>;
 }
