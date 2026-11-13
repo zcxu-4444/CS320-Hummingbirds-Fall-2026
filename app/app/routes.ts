@@ -10,4 +10,7 @@ export default [
   route("api/activities/:id", "routes/api.activities.$id.ts"),
   route("api/activities/:id/cancel", "routes/api.activities.$id.cancel.ts"),
   route("api/restaurants", "routes/api.restaurants.ts"),
+  route("auth/google", "routes/auth.google.tsx"),
+  route("auth/callback", "routes/auth.callback.tsx"),
+  route("logout", "routes/logout.tsx"),
 ] satisfies RouteConfig;

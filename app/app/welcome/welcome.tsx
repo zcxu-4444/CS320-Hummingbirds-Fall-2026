@@ -1,4 +1,5 @@
-import { Button, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
+import GoogleSignIn from "../components/GoogleSignIn";
 
 export function Welcome() {
   return (
@@ -6,9 +7,8 @@ export function Welcome() {
       <Typography component="p">
         Find activities, Join them & Meet new people!
       </Typography>
-      <Button variant="contained" color="primary">
-        Sign in with Google
-      </Button>
+
+      <GoogleSignIn />
     </>
   );
 }
