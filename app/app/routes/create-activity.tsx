@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import ActivityCard from "~/components/ActivityCard";
 import { currentUser, type Activity } from "~/logic";
+import { requireAuth } from "~/auth.server";
 
 type ActivityForm = {
   title: string;
@@ -33,6 +34,12 @@ const emptyForm: ActivityForm = {
   startTime: "",
   capacity: "10",
 };
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const { user, responseHeaders } = await requireAuth(request);
+
+  return Response.json({ userId: user.id }, { headers: responseHeaders });
+}
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -96,7 +103,8 @@ export default function CreateActivity() {
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
+          gridTemplateColumns:
+            "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
           gap: 2,
           alignItems: "stretch",
         }}

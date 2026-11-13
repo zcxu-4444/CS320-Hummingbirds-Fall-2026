@@ -11,6 +11,8 @@ import {
 } from "@mui/material";
 import type { Route } from "./+types/profile";
 import { currentUser, type Profile } from "~/logic";
+import { requireAuth } from "~/auth.server";
+import { data } from "react-router";
 
 type ProfileForm = {
   full_name: string;
@@ -24,6 +26,18 @@ function profileToForm(profile: Profile): ProfileForm {
   };
 }
 
+export async function loader({ request }: Route.LoaderArgs) {
+  const { user, responseHeaders } = await requireAuth(request);
+
+  return data(
+    {
+      email: user.email ?? "",
+      name: user.user_metadata?.full_name ?? "Not provided",
+    },
+    { headers: responseHeaders },
+  );
+}
+
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Profile - Activifind" },
@@ -34,9 +48,7 @@ export function meta({}: Route.MetaArgs) {
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(() => currentUser());
   const [form, setForm] = useState<ProfileForm>(() =>
-    profile
-      ? profileToForm(profile)
-      : { full_name: "", bio: "" },
+    profile ? profileToForm(profile) : { full_name: "", bio: "" },
   );
   const [isEditing, setIsEditing] = useState(false);
 

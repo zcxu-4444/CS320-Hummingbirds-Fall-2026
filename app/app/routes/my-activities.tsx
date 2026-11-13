@@ -1,5 +1,12 @@
 import type { Route } from "./+types/my-activities";
 import { MyActivities as MyActivitiesList } from "~/components/MyActivities";
+import { requireAuth } from "~/auth.server";
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const { user, responseHeaders } = await requireAuth(request);
+
+  return Response.json({ userId: user.id }, { headers: responseHeaders });
+}
 
 export function meta({}: Route.MetaArgs) {
   return [
