@@ -1,10 +1,11 @@
 import { requireAuth } from "~/auth.server";
+import { data } from "react-router";
 import type { Route } from "./+types/create-activity";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const { user, responseHeaders } = await requireAuth(request);
 
-  return Response.json(
+  return data(
     {userId: user.id},
     {headers: responseHeaders},
   );
