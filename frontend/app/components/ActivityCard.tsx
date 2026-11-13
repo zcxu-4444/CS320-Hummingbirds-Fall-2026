@@ -5,9 +5,16 @@ import {
   CardContent,
   Typography,
 } from "@mui/material";
+import type { ReactNode } from "react";
 import { joinedActivities, type Activity } from "~/logic";
 
-export default function ActivityCard({ activity }: { activity: Activity }) {
+export default function ActivityCard({
+  activity,
+  actions,
+}: {
+  activity: Activity;
+  actions?: ReactNode;
+}) {
   const joined = joinedActivities().includes(activity.id);
   return (
     <Card sx={{ width: "100%" }}>
@@ -24,15 +31,16 @@ export default function ActivityCard({ activity }: { activity: Activity }) {
       <CardActions
         sx={{ display: "flex", justifyContent: "flex-end", padding: 1 }}
       >
-        {joined ? (
-          <Button variant="contained" color="error">
-            Leave
-          </Button>
-        ) : (
-          <Button variant="contained" color="primary">
-            Join
-          </Button>
-        )}
+        {actions ??
+          (joined ? (
+            <Button variant="contained" color="error">
+              Leave
+            </Button>
+          ) : (
+            <Button variant="contained" color="primary">
+              Join
+            </Button>
+          ))}
       </CardActions>
     </Card>
   );
