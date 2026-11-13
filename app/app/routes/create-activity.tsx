@@ -16,6 +16,7 @@ import {
 import ActivityCard from "~/components/ActivityCard";
 import { currentUser, type Activity } from "~/logic";
 import { requireAuth } from "~/auth.server";
+import { data } from "react-router";
 
 type ActivityForm = {
   title: string;
@@ -38,7 +39,7 @@ const emptyForm: ActivityForm = {
 export async function loader({ request }: Route.LoaderArgs) {
   const { user, responseHeaders } = await requireAuth(request);
 
-  return Response.json({ userId: user.id }, { headers: responseHeaders });
+  return data({ userId: user.id }, { headers: responseHeaders });
 }
 
 export function meta({}: Route.MetaArgs) {
