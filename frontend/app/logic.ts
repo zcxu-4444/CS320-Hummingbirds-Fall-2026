@@ -40,7 +40,7 @@ export function currentUser(): Profile | null {
 
 export function joinedActivities(): Uuid[] {
   // TODO: return real data. this should be a query.
-  return ["1"];
+  return ["1", "3", "4", "5"];
 }
 
 export function allActivities(): Activity[] {
@@ -67,6 +67,42 @@ export function allActivities(): Activity[] {
       location_name: "Worcester Commons",
       start_time: new Date("2026-11-09T18:00:00Z"),
       capacity: 15,
+      is_private: false,
+      created_at: new Date("2026-11-08T14:00:00Z"),
+    },
+    {
+      id: "3",
+      host_id: "2",
+      title: "Movie Night",
+      description: "Catching the new release at the theater.",
+      category: "Entertainment",
+      location_name: "Amherst Cinema",
+      start_time: new Date("2026-11-15T00:30:00Z"),
+      capacity: 8,
+      is_private: false,
+      created_at: new Date("2026-11-08T14:00:00Z"),
+    },
+    {
+      id: "4",
+      host_id: "1",
+      title: "Library Study Session",
+      description: "Group study for finals.",
+      category: "Study",
+      location_name: "W.E.B. Du Bois Library",
+      start_time: new Date("2026-11-16T19:00:00Z"),
+      capacity: 6,
+      is_private: false,
+      created_at: new Date("2026-11-08T14:00:00Z"),
+    },
+    {
+      id: "5",
+      host_id: "3",
+      title: "Museum Trip",
+      description: "Afternoon visit to the art museum.",
+      category: "Arts",
+      location_name: "Smith College Museum of Art",
+      start_time: new Date("2026-11-22T18:00:00Z"),
+      capacity: 12,
       is_private: false,
       created_at: new Date("2026-11-08T14:00:00Z"),
     },

@@ -1,4 +1,5 @@
 import type { Route } from "./+types/my-activities";
+import { MyActivities as MyActivitiesList } from "~/components/MyActivities";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -8,5 +9,5 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function MyActivities() {
-  return <></>;
+  return <MyActivitiesList />;
 }
