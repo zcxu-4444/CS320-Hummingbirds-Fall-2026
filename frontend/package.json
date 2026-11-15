@@ -14,6 +14,7 @@
     "@mui/material": "^9.5.0",
     "@react-router/node": "^8.5.1",
     "@react-router/serve": "^8.5.1",
+    "@supabase/supabase-js": "^2.109.0",
     "@tanstack/react-query": "^5.105.2",
     "isbot": "^5.1.36",
     "react": "^19.2.8",
