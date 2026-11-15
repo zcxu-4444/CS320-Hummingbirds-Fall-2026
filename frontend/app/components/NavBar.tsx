@@ -1,3 +1,4 @@
+
 import {
   AppBar,
   Avatar,
@@ -7,10 +8,26 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import { Link } from "react-router";
-import { isLoggedIn } from "~/logic";
+
+import { Link, useRouteLoaderData } from "react-router";
+import GoogleSignIn from "./GoogleSignIn";
+import type { User } from "@supabase/supabase-js";
+
+type RootLoaderData = {
+  user: {
+    id: string;
+    email?: string;
+    user_metadata?: {
+      avatar_url?: string;
+      full_name?: string;
+    };
+  } | null;
+};
 
 export function NavBar() {
+  const data = useRouteLoaderData<{user: User | null}>("root");
+  const user = data?.user;
+
   return (
     <AppBar
       position="static"
@@ -22,28 +39,46 @@ export function NavBar() {
       }}
     >
       <Toolbar>
-        <span style={{ flex: 1 }}></span>
-        <Typography component="span" variant="h5" sx={{ fontWeight: "bold" }}>
+        <span style={{ flex: 1 }} />
+
+        <Typography
+          component="span"
+          variant="h5"
+          sx={{ fontWeight: "bold" }}
+        >
           Activifind
         </Typography>
+
         <Box sx={{ flex: 1, textAlign: "right" }}>
-          {isLoggedIn() ? (
+          {user ? (
             <>
               <Button component={Link} to="/">
                 Discover
               </Button>
+
               <Button component={Link} to="/my-activities">
                 My activities
               </Button>
+
               <Button component={Link} to="/create-activity">
                 Create activity
               </Button>
+
               <IconButton component={Link} to="/profile">
-                <Avatar />
+                <Avatar src={user.user_metadata?.avatar_url} />
               </IconButton>
+              <form 
+                action =  "/logout"
+                method = "post"
+                style = {{display: "inline-block"}}
+              >
+                <Button type = "submit" color= "error">
+                  Logout
+                </Button>
+              </form>
             </>
           ) : (
-            <Button>Sign in with Google</Button>
+            <GoogleSignIn />
           )}
         </Box>
       </Toolbar>

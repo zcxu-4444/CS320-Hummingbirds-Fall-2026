@@ -24,18 +24,19 @@ export type Activity = {
 export type Uuid = string;
 
 export function isLoggedIn(): boolean {
-  return currentUser() !== null;
+  return currentUser() !== null
 }
 
 export function currentUser(): Profile | null {
   // TODO: return real data
-  return {
-    id: "1",
-    email: "samtheminuteman@umass.edu",
-    full_name: "Sam the Minuteman",
-    bio: "I'm the UMass mascot.",
-    created_at: new Date("2026-11-08T14:00:00Z"),
-  };
+  // return {
+  //   id: "1",
+  //   email: "samtheminuteman@umass.edu",
+  //   full_name: "Sam the Minuteman",
+  //   bio: "I'm the UMass mascot.",
+  //   created_at: new Date("2026-11-08T14:00:00Z"),
+  // };
+  return null
 }
 
 export function joinedActivities(): Uuid[] {

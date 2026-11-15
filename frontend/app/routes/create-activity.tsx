@@ -1,3 +1,5 @@
+import { requireAuth } from "~/auth.server";
+import { data } from "react-router";
 import type { Route } from "./+types/create-activity";
 import { useState, type FormEvent } from "react";
 import {
@@ -34,6 +36,15 @@ const emptyForm: ActivityForm = {
   capacity: "10",
 };
 
+export async function loader({ request }: Route.LoaderArgs) {
+  const { user, responseHeaders } = await requireAuth(request);
+
+  return data(
+    {userId: user.id},
+    {headers: responseHeaders},
+  );
+}
+
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Create Activity - Activifind" },
@@ -42,6 +53,7 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function CreateActivity() {
+  return <h1>Create Activity</h1>;
   const [activities, setActivities] = useState<Activity[]>([]);
   const [form, setForm] = useState<ActivityForm>(emptyForm);
   const [dialogOpen, setDialogOpen] = useState(false);

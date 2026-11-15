@@ -12,14 +12,33 @@ import "./app.css";
 import { NavBar } from "./components/NavBar";
 import { deepPurple, purple } from "@mui/material/colors";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { getSupabaseServerClient } from "./supabase/server";
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const { supabase, responseHeaders } = getSupabaseServerClient(request);
+
+  const {
+    data: {user},
+    error,
+  } = await supabase.auth.getUser();
+
+  return Response.json(
+    {
+      user: error ? null: user,
+    },
+    { headers: responseHeaders}
+  );
+}
 
 export const links: Route.LinksFunction = () => [
+  
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",
     href: "https://fonts.gstatic.com",
     crossOrigin: "anonymous",
   },
+  { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
   {
     rel: "stylesheet",
     href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
