@@ -26,7 +26,7 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
-const theme = createTheme({ palette: { primary: { main: "#6151a0" } } });
+const theme = createTheme({ palette: { primary: { main: "#662d91" } } });
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
