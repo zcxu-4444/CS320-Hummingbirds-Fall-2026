@@ -23,9 +23,7 @@ export function NavBar() {
     >
       <Toolbar>
         <span style={{ flex: 1 }}></span>
-        <Typography component="span" variant="h5" sx={{ fontWeight: "bold" }}>
-          Activifind
-        </Typography>
+        <img src="/activifindlogo.svg" alt="Activifind" width="150" />
         <Box sx={{ flex: 1, textAlign: "right" }}>
           {isLoggedIn() ? (
             <>
