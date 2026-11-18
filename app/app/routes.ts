@@ -9,4 +9,5 @@ export default [
   route("api/activities", "routes/api.activities.ts"),
   route("api/activities/:id", "routes/api.activities.$id.ts"),
   route("api/activities/:id/cancel", "routes/api.activities.$id.cancel.ts"),
+  route("api/restaurants", "routes/api.restaurants.ts"),
 ] satisfies RouteConfig;
