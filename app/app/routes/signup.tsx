@@ -12,7 +12,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const { user, responseHeaders } = await requireAuth(request);
@@ -27,17 +27,34 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function SignupPage() {
-  const { user } = useLoaderData<{ user: User }>();
+  const { user, headers } = useLoaderData<{ user: User; headers: Headers }>();
   const [fullName, setFullName] = useState("");
   const [bio, setBio] = useState("");
-  const createProfile = () => {};
+  const [error, setError] = useState<string | null>(null);
+  const createProfile = async () => {
+    console.log("AAAAA", user, JSON.stringify(headers));
+    const response = await fetch("/api/profiles", {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify({ full_name: fullName, bio }),
+    });
+    if (response.ok) {
+      window.location.href = "/";
+    } else {
+      const errorResponse = await response.json();
+      setError(
+        errorResponse?.error?.message ??
+          "Profile creation failed for unknown reason",
+      );
+    }
+  };
 
   return (
     <Box sx={{ width: "100%", maxWidth: 720, px: 3, py: 5 }}>
       <Stack spacing={3}>
         <Box>
           <Typography variant="h4" component="h1" gutterBottom>
-            Sign up
+            Sign Up
           </Typography>
           <Typography color="text.secondary">
             Create your profile that other Activifind members will see. You can
@@ -47,11 +64,16 @@ export default function SignupPage() {
 
         <Card variant="outlined">
           <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
-            <Box component="form" onSubmit={createProfile}>
+            <Box>
               <Stack spacing={3}>
                 <Typography variant="h5" component="h2">
                   Create your profile
                 </Typography>
+                {error && (
+                  <Typography color="error">
+                    <strong>Error:</strong> {error}
+                  </Typography>
+                )}
                 <TextField
                   label="Full name"
                   value={fullName}
@@ -67,7 +89,7 @@ export default function SignupPage() {
                   minRows={3}
                   fullWidth
                 />
-                <Button type="submit" variant="contained">
+                <Button onClick={createProfile} variant="contained">
                   Create
                 </Button>
               </Stack>

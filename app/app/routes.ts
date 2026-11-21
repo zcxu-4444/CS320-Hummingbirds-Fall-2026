@@ -13,8 +13,12 @@ export default [
   route("api/restaurants", "routes/api.restaurants.ts"),
   route("api/activities/:id/poll", "routes/api.activities.$id.poll.ts"),
   route("api/polls/:pollId/options", "routes/api.polls.$pollId.options.ts"),
-  route("api/poll-options/:optionId/vote", "routes/api.poll-options.$optionId.vote.ts"),
+  route(
+    "api/poll-options/:optionId/vote",
+    "routes/api.poll-options.$optionId.vote.ts",
+  ),
   route("api/polls/:pollId/resolve", "routes/api.polls.$pollId.resolve.ts"),
+  route("api/profiles", "routes/api.profiles.ts"),
   route("auth/google", "routes/auth.google.tsx"),
   route("auth/callback", "routes/auth.callback.tsx"),
   route("logout", "routes/logout.tsx"),
