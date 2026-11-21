@@ -1,3 +1,6 @@
+import type { User } from "@supabase/supabase-js";
+import { useRouteLoaderData } from "react-router";
+
 export type Profile = {
   id: Uuid;
   email: string;
@@ -24,19 +27,26 @@ export type Activity = {
 export type Uuid = string;
 
 export function isLoggedIn(): boolean {
-  return currentUser() !== null
+  return currentUser() !== null;
 }
 
-export function currentUser(): Profile | null {
+export function currentUser(): User | null {
+  const data = useRouteLoaderData<{ user: User | null }>("root");
+  return data?.user ?? null;
+}
+
+export function currentProfile(): Profile | null {
+  const user = currentUser();
+  if (!user) return null;
+
   // TODO: return real data
-  // return {
-  //   id: "1",
-  //   email: "samtheminuteman@umass.edu",
-  //   full_name: "Sam the Minuteman",
-  //   bio: "I'm the UMass mascot.",
-  //   created_at: new Date("2026-11-08T14:00:00Z"),
-  // };
-  return null
+  return {
+    id: "1",
+    email: "samtheminuteman@umass.edu",
+    full_name: "Sam the Minuteman",
+    bio: "I'm the UMass mascot.",
+    created_at: new Date("2026-11-08T14:00:00Z"),
+  };
 }
 
 export function joinedActivities(): Uuid[] {

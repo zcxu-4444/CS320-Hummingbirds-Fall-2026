@@ -11,21 +11,10 @@ import {
 import { Link, useRouteLoaderData } from "react-router";
 import GoogleSignIn from "./GoogleSignIn";
 import type { User } from "@supabase/supabase-js";
-
-type RootLoaderData = {
-  user: {
-    id: string;
-    email?: string;
-    user_metadata?: {
-      avatar_url?: string;
-      full_name?: string;
-    };
-  } | null;
-};
+import { currentUser } from "~/logic";
 
 export function NavBar() {
-  const data = useRouteLoaderData<{ user: User | null }>("root");
-  const user = data?.user;
+  const user = currentUser();
 
   return (
     <AppBar
