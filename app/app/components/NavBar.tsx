@@ -28,9 +28,11 @@ export function NavBar() {
     >
       <Toolbar>
         <span style={{ flex: 1 }}></span>
-        <img src="/activifindlogo.svg" alt="Activifind" width="150" />
+        <Link to="/">
+          <img src="/activifindlogo.svg" alt="Activifind" width="150" />
+        </Link>
         <Box sx={{ flex: 1, textAlign: "right" }}>
-          {user ? (
+          {user && (
             <>
               <Button component={Link} to="/">
                 Discover
@@ -57,8 +59,6 @@ export function NavBar() {
                 </Button>
               </form>
             </>
-          ) : (
-            <GoogleSignIn />
           )}
         </Box>
       </Toolbar>

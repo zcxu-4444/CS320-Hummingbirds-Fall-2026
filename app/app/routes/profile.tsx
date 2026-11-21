@@ -93,6 +93,8 @@ export default function ProfilePage() {
     setIsEditing(false);
   }
 
+  // FIXME: once this uses the actual profile data, it should reuse the avatar provided by auth
+  // (like in navbar)
   const initials = profile.full_name
     ?.split(/\s+/)
     .filter(Boolean)
