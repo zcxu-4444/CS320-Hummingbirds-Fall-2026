@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import type { Route } from "./+types/profile";
 import { currentProfile, type Profile } from "~/logic";
-import { requireAuth } from "~/auth.server";
+import { requireFullProfile } from "~/auth.server";
 import { data } from "react-router";
 
 type ProfileForm = {
@@ -27,7 +27,7 @@ function profileToForm(profile: Profile): ProfileForm {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const { user, responseHeaders } = await requireAuth(request);
+  const { user, responseHeaders } = await requireFullProfile(request);
 
   return data(
     {

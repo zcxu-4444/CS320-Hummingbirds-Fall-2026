@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 import ActivityCard from "~/components/ActivityCard";
 import { currentUser, type Activity } from "~/logic";
-import { requireAuth } from "~/auth.server";
+import { requireFullProfile } from "~/auth.server";
 import { data } from "react-router";
 
 type ActivityForm = {
@@ -37,7 +37,7 @@ const emptyForm: ActivityForm = {
 };
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const { user, responseHeaders } = await requireAuth(request);
+  const { user, responseHeaders } = await requireFullProfile(request);
 
   return data({ userId: user.id }, { headers: responseHeaders });
 }
