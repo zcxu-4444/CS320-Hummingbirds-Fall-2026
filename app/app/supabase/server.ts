@@ -1,5 +1,3 @@
-import "dotenv/config";
-
 import {
   createServerClient,
   parseCookieHeader,
@@ -19,16 +17,14 @@ export function getSupabaseServerClient(request: Request) {
   const supabase = createServerClient(url, key, {
     cookies: {
       getAll() {
-        return parseCookieHeader(
-          request.headers.get("Cookie") ?? ""
-        );
+        return parseCookieHeader(request.headers.get("Cookie") ?? "");
       },
 
       setAll(cookiesToSet, cacheHeaders) {
         cookiesToSet.forEach(({ name, value, options }) => {
           responseHeaders.append(
             "Set-Cookie",
-            serializeCookieHeader(name, value, options)
+            serializeCookieHeader(name, value, options),
           );
         });
 

@@ -16,6 +16,7 @@ function isUmassUser(user: User) {
 //   2. Authorization: Bearer <token> header: handy for testing with curl
 // Returns null if nobody valid is signed in, so API routes can return a 401.
 export async function getSupabaseForRequest(request: Request) {
+  console.log(request);
   const header = request.headers.get("Authorization") ?? "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : "";
 
@@ -27,7 +28,7 @@ export async function getSupabaseForRequest(request: Request) {
       {
         global: { headers: { Authorization: `Bearer ${token}` } },
         auth: { persistSession: false },
-      }
+      },
     );
     const { data, error } = await supabase.auth.getUser(token);
     if (error || !data.user || !isUmassUser(data.user)) return null;

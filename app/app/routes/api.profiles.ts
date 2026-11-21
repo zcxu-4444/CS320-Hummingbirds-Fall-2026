@@ -1,5 +1,5 @@
 import type { Route } from "./+types/api.activities.$id.cancel";
-import { getSupabaseForRequest } from "~/lib/supabase.server";
+import { requireAuth } from "~/auth.server";
 
 // POST /api/profiles
 // Create a new profile for the signed-in user.
@@ -16,7 +16,9 @@ export async function action({ request }: Route.ActionArgs) {
     );
   }
 
-  const auth = await getSupabaseForRequest(request);
+  // FIXME: this uses getSupabaseServerClient because getSupabaseForRequest didn't work for some reason
+  // which should we use? why do we have both functions anyway?
+  const auth = await requireAuth(request);
 
   if (!auth) {
     return Response.json(
@@ -36,6 +38,34 @@ export async function action({ request }: Route.ActionArgs) {
   } catch {
     return Response.json(
       { error: { code: "INVALID_INPUT", message: "Body must be valid JSON" } },
+      { status: 400 },
+    );
+  }
+
+  if (
+    !body.full_name ||
+    typeof body.full_name !== "string" ||
+    body.full_name.trim() === ""
+  ) {
+    return Response.json(
+      {
+        error: {
+          code: "INVALID_INPUT",
+          message: "Full name must be a non-empty string",
+        },
+      },
+      { status: 400 },
+    );
+  }
+
+  if (body.bio && typeof body.bio !== "string") {
+    return Response.json(
+      {
+        error: {
+          code: "INVALID_INPUT",
+          message: "Bio must be a string",
+        },
+      },
       { status: 400 },
     );
   }
