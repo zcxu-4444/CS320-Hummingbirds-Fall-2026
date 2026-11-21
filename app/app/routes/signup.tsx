@@ -54,7 +54,7 @@ export default function SignupPage() {
       <Stack spacing={3}>
         <Box>
           <Typography variant="h4" component="h1" gutterBottom>
-            Sign Up
+            Welcome, {user.email}
           </Typography>
           <Typography color="text.secondary">
             Create your profile that other Activifind members will see. You can
