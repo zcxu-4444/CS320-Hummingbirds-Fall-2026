@@ -1,22 +1,27 @@
-
 import type { Route } from "./+types/home";
 import { Discover } from "../discover/discover";
 import { Welcome } from "../welcome/welcome";
-import { getSupabaseServerClient } from "../supabase/server";
+import { getSupabaseServerClient } from "~/supabase/server";
+import { requireFullProfile } from "~/auth.server";
+import { isAuthSessionMissingError } from "@supabase/supabase-js";
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const { supabase, responseHeaders } =
-    getSupabaseServerClient(request);
+  const { supabase, responseHeaders } = getSupabaseServerClient(request);
 
   const {
     data: { user },
     error,
   } = await supabase.auth.getUser();
+  if (error && !isAuthSessionMissingError(error)) {
+    console.error("Error fetching user:", error.message);
+  }
 
-  return Response.json(
-    { user: error ? null : user },
-    { headers: responseHeaders }
-  );
+  if (user) {
+    const { user, profile } = await requireFullProfile(request);
+    return Response.json({ user, profile }, { headers: responseHeaders });
+  }
+
+  return Response.json({ user }, { headers: responseHeaders });
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {

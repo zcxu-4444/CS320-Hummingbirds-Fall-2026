@@ -1,10 +1,10 @@
 import type { Route } from "./+types/my-activities";
 import { MyActivities as MyActivitiesList } from "~/components/MyActivities";
 import { data } from "react-router";
-import { requireAuth } from "~/auth.server";
+import { requireFullProfile } from "~/auth.server";
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const { user, responseHeaders } = await requireAuth(request);
+  const { user, responseHeaders } = await requireFullProfile(request);
 
   return data({ userId: user.id }, { headers: responseHeaders });
 }
