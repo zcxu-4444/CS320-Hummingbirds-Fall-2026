@@ -10,7 +10,7 @@ import {
   Typography,
 } from "@mui/material";
 import type { Route } from "./+types/profile";
-import { currentUser, type Profile } from "~/logic";
+import { currentProfile, type Profile } from "~/logic";
 import { requireAuth } from "~/auth.server";
 import { data } from "react-router";
 
@@ -46,7 +46,9 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<Profile | null>(() => currentUser());
+  const [profile, setProfile] = useState<Profile | null>(() =>
+    currentProfile(),
+  );
   const [form, setForm] = useState<ProfileForm>(() =>
     profile ? profileToForm(profile) : { full_name: "", bio: "" },
   );
