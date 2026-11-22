@@ -14,4 +14,7 @@ export default [
   route("api/polls/:pollId/options", "routes/api.polls.$pollId.options.ts"),
   route("api/poll-options/:optionId/vote", "routes/api.poll-options.$optionId.vote.ts"),
   route("api/polls/:pollId/resolve", "routes/api.polls.$pollId.resolve.ts"),
+  route("auth/google", "routes/auth.google.tsx"),
+  route("auth/callback", "routes/auth.callback.tsx"),
+  route("logout", "routes/logout.tsx"),
 ] satisfies RouteConfig;
