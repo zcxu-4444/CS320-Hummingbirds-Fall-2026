@@ -1,5 +1,10 @@
 
-import { supabase } from "../lib/supabase";
+import { getSupabaseBrowserClient } from "../supabase/client";
+
+const supabase = getSupabaseBrowserClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+);
 
 // API 1: Get activities the current user has joined
 export async function getMyActivities() {
