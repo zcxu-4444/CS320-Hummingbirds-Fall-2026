@@ -50,13 +50,13 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function CreateActivity() {
+  const user = currentUser();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [form, setForm] = useState<ActivityForm>(emptyForm);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   function addActivity(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const user = currentUser();
 
     setActivities((current) => [
       ...current,
