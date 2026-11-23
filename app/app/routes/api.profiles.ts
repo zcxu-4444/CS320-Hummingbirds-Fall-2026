@@ -1,5 +1,5 @@
+import { getSupabaseForRequest } from "~/lib/supabase.server";
 import type { Route } from "./+types/api.activities.$id.cancel";
-import { requireAuth } from "~/auth.server";
 
 // POST /api/profiles
 // Create a new profile for the signed-in user.
@@ -16,9 +16,7 @@ export async function action({ request }: Route.ActionArgs) {
     );
   }
 
-  // FIXME: this uses getSupabaseServerClient because getSupabaseForRequest didn't work for some reason
-  // which should we use? why do we have both functions anyway?
-  const auth = await requireAuth(request);
+  const auth = await getSupabaseForRequest(request);
 
   if (!auth) {
     return Response.json(
