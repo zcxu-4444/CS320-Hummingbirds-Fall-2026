@@ -1,41 +1,41 @@
 import { useState, type FormEvent } from "react";
 import {
+  Alert,
   Avatar,
   Box,
   Button,
   Card,
   CardContent,
+  Chip,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
 import type { Route } from "./+types/profile";
-import { currentProfile, type Profile } from "~/logic";
+import type { Profile } from "~/logic";
 import { requireFullProfile } from "~/auth.server";
 import { data } from "react-router";
+
+const INTEREST_OPTIONS = ["food", "sports", "study", "social", "games", "other"];
 
 type ProfileForm = {
   full_name: string;
   bio: string;
+  interests: string[];
 };
 
 function profileToForm(profile: Profile): ProfileForm {
   return {
     full_name: profile.full_name ?? "",
     bio: profile.bio ?? "",
+    interests: profile.interests ?? [],
   };
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const { user, responseHeaders } = await requireFullProfile(request);
+  const { profile, responseHeaders } = await requireFullProfile(request);
 
-  return data(
-    {
-      email: user.email ?? "",
-      name: user.user_metadata?.full_name ?? "Not provided",
-    },
-    { headers: responseHeaders },
-  );
+  return data({ profile: profile as Profile }, { headers: responseHeaders });
 }
 
 export function meta({}: Route.MetaArgs) {
@@ -45,14 +45,14 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export default function ProfilePage() {
-  const [profile, setProfile] = useState<Profile | null>(() =>
-    currentProfile(),
-  );
+export default function ProfilePage({ loaderData }: Route.ComponentProps) {
+  const [profile, setProfile] = useState<Profile | null>(loaderData.profile);
   const [form, setForm] = useState<ProfileForm>(() =>
-    profile ? profileToForm(profile) : { full_name: "", bio: "" },
+    profile ? profileToForm(profile) : { full_name: "", bio: "", interests: [] },
   );
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   if (!profile) {
     return (
@@ -70,27 +70,56 @@ export default function ProfilePage() {
   function startEditing() {
     if (!profile) return;
     setForm(profileToForm(profile));
+    setSaveError(null);
     setIsEditing(true);
   }
 
   function cancelEditing() {
     if (!profile) return;
     setForm(profileToForm(profile));
+    setSaveError(null);
     setIsEditing(false);
   }
 
-  function saveProfile(event: FormEvent<HTMLFormElement>) {
+  function toggleInterest(interest: string) {
+    setForm((current) => ({
+      ...current,
+      interests: current.interests.includes(interest)
+        ? current.interests.filter((i) => i !== interest)
+        : [...current.interests, interest],
+    }));
+  }
+
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setProfile((current) =>
-      current
-        ? {
-            ...current,
-            full_name: form.full_name.trim(),
-            bio: form.bio.trim(),
-          }
-        : current,
-    );
-    setIsEditing(false);
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      const response = await fetch("/api/profiles", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name: form.full_name,
+          bio: form.bio,
+          interests: form.interests,
+        }),
+      });
+      const json = await response.json();
+
+      if (!response.ok) {
+        const fieldErrors = json?.error?.fields ? Object.values(json.error.fields).join(" ") : "";
+        setSaveError(fieldErrors || json?.error?.message || "Couldn't save your profile");
+        return;
+      }
+
+      setProfile(json.profile);
+      setIsEditing(false);
+    } catch {
+      setSaveError("Couldn't reach the server, try again");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   // FIXME: once this uses the actual profile data, it should reuse the avatar provided by auth
@@ -123,6 +152,7 @@ export default function ProfilePage() {
                   <Typography variant="h5" component="h2">
                     Edit profile
                   </Typography>
+                  {saveError && <Alert severity="error">{saveError}</Alert>}
                   <TextField
                     label="Full name"
                     value={form.full_name}
@@ -141,15 +171,38 @@ export default function ProfilePage() {
                     multiline
                     minRows={3}
                     fullWidth
+                    slotProps={{ htmlInput: { maxLength: 300 } }}
                   />
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Interests
+                    </Typography>
+                    <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
+                      {INTEREST_OPTIONS.map((interest) => {
+                        const selected = form.interests.includes(interest);
+                        return (
+                          <Chip
+                            key={interest}
+                            label={interest}
+                            clickable
+                            color={selected ? "primary" : "default"}
+                            variant={selected ? "filled" : "outlined"}
+                            onClick={() => toggleInterest(interest)}
+                          />
+                        );
+                      })}
+                    </Stack>
+                  </Box>
                   <Stack
                     direction="row"
                     spacing={1}
                     sx={{ justifyContent: "flex-end" }}
                   >
-                    <Button onClick={cancelEditing}>Cancel</Button>
-                    <Button type="submit" variant="contained">
-                      Save changes
+                    <Button onClick={cancelEditing} disabled={isSaving}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" variant="contained" disabled={isSaving}>
+                      {isSaving ? "Saving..." : "Save changes"}
                     </Button>
                   </Stack>
                 </Stack>
@@ -195,13 +248,28 @@ export default function ProfilePage() {
                   </Typography>
                 </Box>
 
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Interests
+                  </Typography>
+                  {profile.interests && profile.interests.length > 0 ? (
+                    <Stack direction="row" spacing={1} useFlexGap sx={{ mt: 1, flexWrap: "wrap" }}>
+                      {profile.interests.map((interest) => (
+                        <Chip key={interest} label={interest} color="primary" variant="outlined" />
+                      ))}
+                    </Stack>
+                  ) : (
+                    <Typography sx={{ mt: 0.5 }}>Add interests so we can show you activities you'll like.</Typography>
+                  )}
+                </Box>
+
                 {profile.created_at && (
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary">
                       Member since
                     </Typography>
                     <Typography sx={{ mt: 0.5 }}>
-                      {profile.created_at.toLocaleDateString(undefined, {
+                      {new Date(profile.created_at).toLocaleDateString(undefined, {
                         year: "numeric",
                         month: "long",
                         day: "numeric",

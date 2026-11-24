@@ -6,8 +6,8 @@ export type Profile = {
   email: string;
   full_name?: string;
   bio?: string;
-  interests?: number;
-  created_at?: Date;
+  interests?: string[];
+  created_at?: string | Date;
 };
 
 export type Activity = {
