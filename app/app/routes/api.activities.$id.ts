@@ -1,9 +1,6 @@
-
+import { Uuid } from "~/lib/schema";
 import type { Route } from "./+types/api.activities.$id";
 import { getSupabaseForRequest } from "~/lib/supabase.server";
-
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 // GET /api/activities/:id
 export async function loader({ request, params }: Route.LoaderArgs) {
@@ -23,7 +20,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   const activityId = params.id;
 
-  if (!activityId || !UUID_REGEX.test(activityId)) {
+  if (!activityId || !Uuid.validate(activityId)) {
     return Response.json(
       {
         error: {
@@ -133,7 +130,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   const activityId = params.id;
 
-  if (!activityId || !UUID_REGEX.test(activityId)) {
+  if (!activityId || !Uuid.validate(activityId)) {
     return Response.json(
       { error: { code: "INVALID_INPUT", message: "Activity ID must be a valid UUID" } },
       { status: 400 }

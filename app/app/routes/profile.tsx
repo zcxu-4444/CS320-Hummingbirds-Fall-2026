@@ -10,9 +10,10 @@ import {
   Typography,
 } from "@mui/material";
 import type { Route } from "./+types/profile";
-import { currentProfile, type Profile } from "~/logic";
+import { currentProfile } from "~/logic";
 import { requireFullProfile } from "~/auth.server";
 import { data } from "react-router";
+import type { Profile } from "~/lib/schema";
 
 type ProfileForm = {
   full_name: string;
