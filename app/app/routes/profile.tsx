@@ -10,8 +10,8 @@ import {
   Typography,
 } from "@mui/material";
 import type { Route } from "./+types/profile";
-import { currentUser, type Profile } from "~/logic";
-import { requireAuth } from "~/auth.server";
+import { currentProfile, type Profile } from "~/logic";
+import { requireFullProfile } from "~/auth.server";
 import { data } from "react-router";
 
 type ProfileForm = {
@@ -27,7 +27,7 @@ function profileToForm(profile: Profile): ProfileForm {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const { user, responseHeaders } = await requireAuth(request);
+  const { user, responseHeaders } = await requireFullProfile(request);
 
   return data(
     {
@@ -46,7 +46,9 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<Profile | null>(() => currentUser());
+  const [profile, setProfile] = useState<Profile | null>(() =>
+    currentProfile(),
+  );
   const [form, setForm] = useState<ProfileForm>(() =>
     profile ? profileToForm(profile) : { full_name: "", bio: "" },
   );
@@ -91,6 +93,8 @@ export default function ProfilePage() {
     setIsEditing(false);
   }
 
+  // FIXME: once this uses the actual profile data, it should reuse the avatar provided by auth
+  // (like in navbar)
   const initials = profile.full_name
     ?.split(/\s+/)
     .filter(Boolean)

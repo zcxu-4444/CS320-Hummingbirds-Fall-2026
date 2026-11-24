@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 import ActivityCard from "~/components/ActivityCard";
 import { currentUser, type Activity } from "~/logic";
-import { requireAuth } from "~/auth.server";
+import { requireFullProfile } from "~/auth.server";
 import { data } from "react-router";
 
 type ActivityForm = {
@@ -37,7 +37,7 @@ const emptyForm: ActivityForm = {
 };
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const { user, responseHeaders } = await requireAuth(request);
+  const { user, responseHeaders } = await requireFullProfile(request);
 
   return data({ userId: user.id }, { headers: responseHeaders });
 }
@@ -50,13 +50,13 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function CreateActivity() {
+  const user = currentUser();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [form, setForm] = useState<ActivityForm>(emptyForm);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   function addActivity(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const user = currentUser();
 
     setActivities((current) => [
       ...current,

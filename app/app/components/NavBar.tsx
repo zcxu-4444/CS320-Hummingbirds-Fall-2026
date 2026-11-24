@@ -11,21 +11,10 @@ import {
 import { Link, useRouteLoaderData } from "react-router";
 import GoogleSignIn from "./GoogleSignIn";
 import type { User } from "@supabase/supabase-js";
-
-type RootLoaderData = {
-  user: {
-    id: string;
-    email?: string;
-    user_metadata?: {
-      avatar_url?: string;
-      full_name?: string;
-    };
-  } | null;
-};
+import { currentUser } from "~/logic";
 
 export function NavBar() {
-  const data = useRouteLoaderData<{ user: User | null }>("root");
-  const user = data?.user;
+  const user = currentUser();
 
   return (
     <AppBar
@@ -39,9 +28,11 @@ export function NavBar() {
     >
       <Toolbar>
         <span style={{ flex: 1 }}></span>
-        <img src="/activifindlogo.svg" alt="Activifind" width="150" />
+        <Link to="/">
+          <img src="/activifindlogo.svg" alt="Activifind" width="150" />
+        </Link>
         <Box sx={{ flex: 1, textAlign: "right" }}>
-          {user ? (
+          {user && (
             <>
               <Button component={Link} to="/">
                 Discover
@@ -68,8 +59,6 @@ export function NavBar() {
                 </Button>
               </form>
             </>
-          ) : (
-            <GoogleSignIn />
           )}
         </Box>
       </Toolbar>
