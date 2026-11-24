@@ -39,7 +39,7 @@ export const Activity = z.object({
   description: z.string(),
   category: Category,
   location_name: z.string().nonempty("Location must be specified"),
-  start_time: z.date(),
+  start_time: z.coerce.date(),
   capacity: z.number().int().positive("Capacity must be a positive integer"),
   is_private: z.boolean(),
   join_code: z.string().optional(),
@@ -47,3 +47,13 @@ export const Activity = z.object({
   status: ActivityStatus,
 });
 export type Activity = z.infer<typeof Activity>;
+export const NewActivity = Activity.pick({
+  title: true,
+  description: true,
+  category: true,
+  location_name: true,
+  start_time: true,
+  capacity: true,
+  is_private: true,
+});
+export type NewActivity = z.infer<typeof NewActivity>;

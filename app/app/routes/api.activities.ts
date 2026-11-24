@@ -1,3 +1,4 @@
+import { Activity, NewActivity } from "~/lib/schema";
 import type { Route } from "./+types/api.activities";
 import { getSupabaseForRequest } from "~/lib/supabase.server";
 
@@ -128,37 +129,29 @@ export async function action({ request }: Route.ActionArgs) {
     );
   }
 
-    const errors: Record<string, string> = {};
-  const categories = ["food", "sports", "study", "social", "games", "other"];
-
-  if (typeof body.title !== "string" || body.title.trim().length < 3 || body.title.trim().length > 80) {
-    errors.title = "Title must be 3-80 characters";
-  }
-  if (body.description != null && (typeof body.description !== "string" || body.description.length > 1000)) {
-    errors.description = "Description must be at most 1000 characters";
-  }
-  if (!categories.includes(body.category)) {
-    errors.category = `Category must be one of: ${categories.join(", ")}`;
-  }
-  if (typeof body.location_name !== "string" || !body.location_name.trim()) {
-    errors.location_name = "Location is required";
-  }
-  const start = new Date(body.start_time);
-  if (!body.start_time || Number.isNaN(start.getTime())) {
-    errors.start_time = "Start time must be a valid date";
-  } else if (start <= new Date()) {
-    errors.start_time = "Activity must start in the future";
-  }
-  if (!Number.isInteger(body.capacity) || body.capacity < 2 || body.capacity > 50) {
-    errors.capacity = "Capacity must be a whole number from 2 to 50";
-  }
-  if (body.is_private !== undefined && typeof body.is_private !== "boolean") {
-    errors.is_private = "is_private must be true or false";
-  }
-
-  if (Object.keys(errors).length > 0) {
+  const newActivity = NewActivity.safeParse(body);
+  if (!newActivity.success) {
     return Response.json(
-      { error: { code: "INVALID_INPUT", message: "Some fields are invalid", fields: errors } },
+      {
+        error: {
+          code: "INVALID_INPUT",
+          message: "Invalid activity data",
+          issues: newActivity.error.issues,
+        },
+      },
+      { status: 400 }
+    );
+  }
+
+  if (newActivity.data.start_time <= new Date()) {
+    return Response.json(
+      {
+        error: {
+          code: "INVALID_INPUT",
+          message: "Activity must start in the future",
+          fields: { start_time: "Activity must start in the future" },
+        },
+      },
       { status: 400 }
     );
   }
@@ -166,13 +159,13 @@ export async function action({ request }: Route.ActionArgs) {
   const { data, error } = await auth.supabase
     .from("activities")
     .insert({
-      title: body.title.trim(),
-      description: body.description ?? null,
-      category: body.category,
-      location_name: body.location_name.trim(),
-      start_time: body.start_time,
-      capacity: body.capacity,
-      is_private: body.is_private ?? false,
+      title: newActivity.data.title,
+      description: newActivity.data.description,
+      category: newActivity.data.category,
+      location_name: newActivity.data.location_name,
+      start_time: newActivity.data.start_time,
+      capacity: newActivity.data.capacity,
+      is_private: newActivity.data.is_private,
       host_id: auth.user.id, // comes from the token, not the body
     })
     .select()
@@ -208,5 +201,5 @@ export async function action({ request }: Route.ActionArgs) {
     );
   }
 
-  return Response.json({ activity: data }, { status: 201 });
+  return Response.json({ activity: Activity.parse(data) }, { status: 201 });
 }
