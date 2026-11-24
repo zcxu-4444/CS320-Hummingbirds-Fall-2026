@@ -1,5 +1,6 @@
 import { data, redirect } from "react-router";
 import { getSupabaseServerClient } from "./supabase/server";
+import { Profile } from "./lib/schema";
 
 export async function requireFullProfile(request: Request) {
   const { user, supabase, responseHeaders } = await requireAuth(request);
@@ -38,7 +39,7 @@ export async function requireFullProfile(request: Request) {
     });
   }
 
-  return { user, profile, supabase, responseHeaders };
+  return { user, profile: Profile.parse(profile), supabase, responseHeaders };
 }
 
 export async function requireAuth(request: Request) {

@@ -1,5 +1,6 @@
 import { getSupabaseForRequest } from "~/lib/supabase.server";
-import type { Route } from "./+types/api.activities.$id.cancel";
+import type { Route } from "./+types/api.profiles";
+import { NewProfile, Profile } from "~/lib/schema";
 
 // POST /api/profiles
 // Create a new profile for the signed-in user.
@@ -40,28 +41,14 @@ export async function action({ request }: Route.ActionArgs) {
     );
   }
 
-  if (
-    !body.full_name ||
-    typeof body.full_name !== "string" ||
-    body.full_name.trim() === ""
-  ) {
+  let newProfile = NewProfile.safeParse(body);
+  if (!newProfile.success) {
     return Response.json(
       {
         error: {
           code: "INVALID_INPUT",
-          message: "Full name must be a non-empty string",
-        },
-      },
-      { status: 400 },
-    );
-  }
-
-  if (body.bio && typeof body.bio !== "string") {
-    return Response.json(
-      {
-        error: {
-          code: "INVALID_INPUT",
-          message: "Bio must be a string",
+          message: "Invalid profile data",
+          issues: newProfile.error.issues,
         },
       },
       { status: 400 },
@@ -74,10 +61,9 @@ export async function action({ request }: Route.ActionArgs) {
       // Important: These both come from the validated auth token, not the user's request body.
       id: auth.user.id,
       email: auth.user.email,
-
-      full_name: body.full_name?.trim() ?? null,
-      bio: body.bio?.trim() ?? null,
-      interests: body.interests ?? [],
+      full_name: newProfile.data.full_name,
+      bio: newProfile.data.bio,
+      interests: newProfile.data.interests,
       created_at: new Date(),
     })
     .select()
@@ -97,5 +83,6 @@ export async function action({ request }: Route.ActionArgs) {
     );
   }
 
-  return Response.json({ profile: data }, { status: 201 });
+  const profile = Profile.parse(data);
+  return Response.json({ profile }, { status: 201 });
 }

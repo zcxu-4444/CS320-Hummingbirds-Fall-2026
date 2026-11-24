@@ -12,28 +12,25 @@ import {
 import type { Route } from "./+types/profile";
 import { currentProfile } from "~/logic";
 import { requireFullProfile } from "~/auth.server";
-import { data } from "react-router";
-import type { Profile } from "~/lib/schema";
+import { data, useLoaderData } from "react-router";
+import { Profile, type NewProfile } from "~/lib/schema";
 
-type ProfileForm = {
-  full_name: string;
-  bio: string;
-};
-
-function profileToForm(profile: Profile): ProfileForm {
+function profileToForm(profile: Profile): NewProfile {
   return {
-    full_name: profile.full_name ?? "",
-    bio: profile.bio ?? "",
+    full_name: profile.full_name,
+    bio: profile.bio,
+    interests: profile.interests,
   };
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const { user, responseHeaders } = await requireFullProfile(request);
+  const { user, profile, responseHeaders } = await requireFullProfile(request);
 
   return data(
     {
       email: user.email ?? "",
       name: user.user_metadata?.full_name ?? "Not provided",
+      profile,
     },
     { headers: responseHeaders },
   );
@@ -47,12 +44,9 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<Profile | null>(() =>
-    currentProfile(),
-  );
-  const [form, setForm] = useState<ProfileForm>(() =>
-    profile ? profileToForm(profile) : { full_name: "", bio: "" },
-  );
+  const { profile: loadedProfile } = useLoaderData<{ profile: Profile }>();
+  const [profile, setProfile] = useState<Profile>(loadedProfile);
+  const [form, setForm] = useState<NewProfile>(profileToForm(profile));
   const [isEditing, setIsEditing] = useState(false);
 
   if (!profile) {
@@ -88,6 +82,7 @@ export default function ProfilePage() {
             ...current,
             full_name: form.full_name.trim(),
             bio: form.bio.trim(),
+            interests: form.interests,
           }
         : current,
     );
