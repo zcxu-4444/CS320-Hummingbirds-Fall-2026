@@ -14,9 +14,10 @@ import {
   Typography,
 } from "@mui/material";
 import ActivityCard from "~/components/ActivityCard";
-import { currentUser, type Activity } from "~/logic";
+import { currentUser } from "~/logic";
 import { requireFullProfile } from "~/auth.server";
 import { data } from "react-router";
+import { Category, type Activity } from "~/lib/schema";
 
 type ActivityForm = {
   title: string;
@@ -65,12 +66,13 @@ export default function CreateActivity() {
         host_id: user?.id ?? "",
         title: form.title.trim(),
         description: form.description.trim(),
-        category: form.category.trim(),
+        category: Category.parse(form.category.trim()),
         location_name: form.location.trim(),
         start_time: new Date(form.startTime),
         capacity: Number(form.capacity),
         is_private: false,
         created_at: new Date(),
+        status: "open",
       },
     ]);
     setForm(emptyForm);
