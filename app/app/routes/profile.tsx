@@ -10,10 +10,10 @@ import {
   Typography,
 } from "@mui/material";
 import type { Route } from "./+types/profile";
-import { currentProfile } from "~/logic";
 import { requireFullProfile } from "~/auth.server";
 import { data, useLoaderData } from "react-router";
 import { Profile, type NewProfile } from "~/lib/schema";
+import type { User } from "@supabase/supabase-js";
 
 function profileToForm(profile: Profile): NewProfile {
   return {
@@ -26,14 +26,7 @@ function profileToForm(profile: Profile): NewProfile {
 export async function loader({ request }: Route.LoaderArgs) {
   const { user, profile, responseHeaders } = await requireFullProfile(request);
 
-  return data(
-    {
-      email: user.email ?? "",
-      name: user.user_metadata?.full_name ?? "Not provided",
-      profile,
-    },
-    { headers: responseHeaders },
-  );
+  return data({ user, profile }, { headers: responseHeaders });
 }
 
 export function meta({}: Route.MetaArgs) {
@@ -44,7 +37,10 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function ProfilePage() {
-  const { profile: loadedProfile } = useLoaderData<{ profile: Profile }>();
+  const { user, profile: loadedProfile } = useLoaderData<{
+    user: User;
+    profile: Profile;
+  }>();
   const [profile, setProfile] = useState<Profile>(loadedProfile);
   const [form, setForm] = useState<NewProfile>(profileToForm(profile));
   const [isEditing, setIsEditing] = useState(false);
@@ -88,16 +84,6 @@ export default function ProfilePage() {
     );
     setIsEditing(false);
   }
-
-  // FIXME: once this uses the actual profile data, it should reuse the avatar provided by auth
-  // (like in navbar)
-  const initials = profile.full_name
-    ?.split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
 
   return (
     <Box sx={{ width: "100%", maxWidth: 720, px: 3, py: 5 }}>
@@ -160,15 +146,9 @@ export default function ProfilePage() {
                   }}
                 >
                   <Avatar
-                    sx={{
-                      width: 72,
-                      height: 72,
-                      bgcolor: "primary.main",
-                      fontSize: 28,
-                    }}
-                  >
-                    {initials || "?"}
-                  </Avatar>
+                    sx={{ width: 72, height: 72 }}
+                    src={user.user_metadata?.avatar_url}
+                  />
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="h5" component="h2">
                       {profile.full_name || "Your name"}
