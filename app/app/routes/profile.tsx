@@ -12,30 +12,23 @@ import {
   Typography,
 } from "@mui/material";
 import type { Route } from "./+types/profile";
-import type { Profile } from "~/logic";
 import { requireFullProfile } from "~/auth.server";
-import { data } from "react-router";
+import { data, useLoaderData } from "react-router";
+import { Category, Profile, type NewProfile } from "~/lib/schema";
+import type { User } from "@supabase/supabase-js";
 
-const INTEREST_OPTIONS = ["food", "sports", "study", "social", "games", "other"];
-
-type ProfileForm = {
-  full_name: string;
-  bio: string;
-  interests: string[];
-};
-
-function profileToForm(profile: Profile): ProfileForm {
+function profileToForm(profile: Profile): NewProfile {
   return {
-    full_name: profile.full_name ?? "",
-    bio: profile.bio ?? "",
-    interests: profile.interests ?? [],
+    full_name: profile.full_name,
+    bio: profile.bio,
+    interests: profile.interests,
   };
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const { profile, responseHeaders } = await requireFullProfile(request);
+  const { user, profile, responseHeaders } = await requireFullProfile(request);
 
-  return data({ profile: profile as Profile }, { headers: responseHeaders });
+  return data({ user, profile }, { headers: responseHeaders });
 }
 
 export function meta({}: Route.MetaArgs) {
@@ -45,11 +38,13 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export default function ProfilePage({ loaderData }: Route.ComponentProps) {
-  const [profile, setProfile] = useState<Profile | null>(loaderData.profile);
-  const [form, setForm] = useState<ProfileForm>(() =>
-    profile ? profileToForm(profile) : { full_name: "", bio: "", interests: [] },
-  );
+export default function ProfilePage() {
+  const { user, profile: loadedProfile } = useLoaderData<{
+    user: User;
+    profile: Profile;
+  }>();
+  const [profile, setProfile] = useState<Profile>(loadedProfile);
+  const [form, setForm] = useState<NewProfile>(profileToForm(profile));
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -81,7 +76,7 @@ export default function ProfilePage({ loaderData }: Route.ComponentProps) {
     setIsEditing(false);
   }
 
-  function toggleInterest(interest: string) {
+  function toggleInterest(interest: Category) {
     setForm((current) => ({
       ...current,
       interests: current.interests.includes(interest)
@@ -99,21 +94,17 @@ export default function ProfilePage({ loaderData }: Route.ComponentProps) {
       const response = await fetch("/api/profiles", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          full_name: form.full_name,
-          bio: form.bio,
-          interests: form.interests,
-        }),
+        body: JSON.stringify(form),
       });
       const json = await response.json();
 
       if (!response.ok) {
-        const fieldErrors = json?.error?.fields ? Object.values(json.error.fields).join(" ") : "";
-        setSaveError(fieldErrors || json?.error?.message || "Couldn't save your profile");
+        const issues = json?.error?.issues?.map((issue: { message: string }) => issue.message).join(" ");
+        setSaveError(issues || json?.error?.message || "Couldn't save your profile");
         return;
       }
 
-      setProfile(json.profile);
+      setProfile(Profile.parse(json.profile));
       setIsEditing(false);
     } catch {
       setSaveError("Couldn't reach the server, try again");
@@ -121,16 +112,6 @@ export default function ProfilePage({ loaderData }: Route.ComponentProps) {
       setIsSaving(false);
     }
   }
-
-  // FIXME: once this uses the actual profile data, it should reuse the avatar provided by auth
-  // (like in navbar)
-  const initials = profile.full_name
-    ?.split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
 
   return (
     <Box sx={{ width: "100%", maxWidth: 720, px: 3, py: 5 }}>
@@ -178,7 +159,7 @@ export default function ProfilePage({ loaderData }: Route.ComponentProps) {
                       Interests
                     </Typography>
                     <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
-                      {INTEREST_OPTIONS.map((interest) => {
+                      {Category.options.map((interest) => {
                         const selected = form.interests.includes(interest);
                         return (
                           <Chip
@@ -217,15 +198,9 @@ export default function ProfilePage({ loaderData }: Route.ComponentProps) {
                   }}
                 >
                   <Avatar
-                    sx={{
-                      width: 72,
-                      height: 72,
-                      bgcolor: "primary.main",
-                      fontSize: 28,
-                    }}
-                  >
-                    {initials || "?"}
-                  </Avatar>
+                    sx={{ width: 72, height: 72 }}
+                    src={user.user_metadata?.avatar_url}
+                  />
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="h5" component="h2">
                       {profile.full_name || "Your name"}
@@ -252,14 +227,16 @@ export default function ProfilePage({ loaderData }: Route.ComponentProps) {
                   <Typography variant="subtitle2" color="text.secondary">
                     Interests
                   </Typography>
-                  {profile.interests && profile.interests.length > 0 ? (
+                  {profile.interests.length > 0 ? (
                     <Stack direction="row" spacing={1} useFlexGap sx={{ mt: 1, flexWrap: "wrap" }}>
                       {profile.interests.map((interest) => (
                         <Chip key={interest} label={interest} color="primary" variant="outlined" />
                       ))}
                     </Stack>
                   ) : (
-                    <Typography sx={{ mt: 0.5 }}>Add interests so we can show you activities you'll like.</Typography>
+                    <Typography sx={{ mt: 0.5 }}>
+                      Add interests so we can show you activities you'll like.
+                    </Typography>
                   )}
                 </Box>
 

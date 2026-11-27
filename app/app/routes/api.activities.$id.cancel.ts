@@ -1,9 +1,6 @@
-
+import { Activity, Uuid } from "~/lib/schema";
 import type { Route } from "./+types/api.activities.$id.cancel";
 import { getSupabaseForRequest } from "~/lib/supabase.server";
-
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 // POST /api/activities/:id/cancel
 // Soft cancellation: preserves the activity, memberships, and polls.
@@ -16,7 +13,7 @@ export async function action({ request, params }: Route.ActionArgs) {
           message: "Use POST to cancel an activity",
         },
       },
-      { status: 405 }
+      { status: 405 },
     );
   }
 
@@ -30,29 +27,29 @@ export async function action({ request, params }: Route.ActionArgs) {
           message: "Missing or invalid token",
         },
       },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
   const activityId = params.id;
-
-  if (!activityId || !UUID_REGEX.test(activityId)) {
+  if (!Uuid.validate(activityId)) {
     return Response.json(
       {
         error: {
           code: "INVALID_INPUT",
           message: "Activity ID must be a valid UUID",
         },
-        },
-      { status: 400 }
+      },
+      { status: 400 },
     );
   }
 
-  const { data: activity, error: lookupError } = await auth.supabase
+  const { data, error: lookupError } = await auth.supabase
     .from("activities")
     .select("id, host_id, status")
     .eq("id", activityId)
     .maybeSingle();
+  const activity = Activity.parse(data);
 
   if (lookupError) {
     console.error("cancelActivity lookup failed:", lookupError);
@@ -63,7 +60,7 @@ export async function action({ request, params }: Route.ActionArgs) {
           message: "Failed to retrieve activity",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -75,7 +72,7 @@ export async function action({ request, params }: Route.ActionArgs) {
           message: "Activity not found or not accessible",
         },
       },
-      { status: 404 }
+      { status: 404 },
     );
   }
 
@@ -87,7 +84,7 @@ export async function action({ request, params }: Route.ActionArgs) {
           message: "Only the host can cancel this activity",
         },
       },
-      { status: 403 }
+      { status: 403 },
     );
   }
 
@@ -99,7 +96,7 @@ export async function action({ request, params }: Route.ActionArgs) {
           message: "Activity is already cancelled or completed",
         },
       },
-      { status: 409 }
+      { status: 409 },
     );
   }
 
@@ -107,13 +104,14 @@ export async function action({ request, params }: Route.ActionArgs) {
   // Hosts may cancel an activity even after its scheduled start time,
   // provided its status is still "open".
   // If this assumption is unreasonable, lmk
-  const { data, error } = await auth.supabase
+  const { data: updatedData, error } = await auth.supabase
     .from("activities")
     .update({ status: "cancelled" })
     .eq("id", activityId)
     .eq("host_id", auth.user.id)
     .eq("status", "open")
-    .select(`
+    .select(
+      `
       id,
       host_id,
       title,
@@ -124,8 +122,9 @@ export async function action({ request, params }: Route.ActionArgs) {
       capacity,
       status,
       created_at
-    `)
-    .maybeSingle();
+    `,
+    )
+    .single();
 
   if (error) {
     if (error.code === "42501") {
@@ -135,8 +134,8 @@ export async function action({ request, params }: Route.ActionArgs) {
             code: "ACCESS_DENIED",
             message: "You cannot cancel this activity",
           },
-          },
-        { status: 403 }
+        },
+        { status: 403 },
       );
     }
 
@@ -148,21 +147,10 @@ export async function action({ request, params }: Route.ActionArgs) {
           message: "Failed to cancel activity",
         },
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
-  if (!data) {
-    return Response.json(
-      {
-        error: {
-          code: "ACTIVITY_CLOSED",
-          message: "Activity was changed or is no longer cancellable",
-        },
-      },
-      { status: 409 }
-    );
-  }
-
-  return Response.json({ activity: data });
+  const updatedActivity = Activity.parse(updatedData);
+  return Response.json({ activity: updatedActivity });
 }

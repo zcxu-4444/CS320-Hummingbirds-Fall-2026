@@ -6,7 +6,8 @@ import {
   Typography,
 } from "@mui/material";
 import type { ReactNode } from "react";
-import { joinedActivities, type Activity } from "~/logic";
+import { joinedActivities } from "~/logic";
+import type { Activity } from "~/lib/schema";
 
 export default function ActivityCard({
   activity,

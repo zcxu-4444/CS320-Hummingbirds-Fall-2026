@@ -19,6 +19,7 @@ export default [
   ),
   route("api/polls/:pollId/resolve", "routes/api.polls.$pollId.resolve.ts"),
   route("api/profiles", "routes/api.profiles.ts"),
+  route("api/profiles/:id", "routes/api.profiles.$id.ts"),
   route("auth/google", "routes/auth.google.tsx"),
   route("auth/callback", "routes/auth.callback.tsx"),
   route("logout", "routes/logout.tsx"),
