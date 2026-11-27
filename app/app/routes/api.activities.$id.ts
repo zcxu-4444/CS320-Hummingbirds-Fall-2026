@@ -1,4 +1,4 @@
-import { Uuid } from "~/lib/schema";
+import { Uuid, UpdateActivity } from "~/lib/schema";
 import type { Route } from "./+types/api.activities.$id";
 import { getSupabaseForRequest } from "~/lib/supabase.server";
 
@@ -148,128 +148,33 @@ export async function action({ request, params }: Route.ActionArgs) {
     );
   }
 
-  if (body === null || typeof body !== "object" || Array.isArray(body)) {
-    return Response.json(
-      { error: { code: "INVALID_INPUT", message: "Body must be a JSON object" } },
-      { status: 400 }
-    );
+ const parsed = UpdateActivity.safeParse(body);
+
+if (!parsed.success) {
+  const fields: Record<string, string> = {};
+
+  for (const issue of parsed.error.issues) {
+    const field = issue.path[0];
+
+    if (typeof field === "string") {
+      fields[field] = issue.message;
+    }
   }
 
-  const updates = body as Record<string, unknown>;
-
-  // Only these fields may be edited.
-  // In particular, id, host_id, created_at, status, and join_code are not editable.
-  const allowedFields = [
-    "title",
-    "description",
-    "category",
-    "location_name",
-    "start_time",
-    "capacity",
-  ] as const;
-
-  const invalidFields = Object.keys(updates).filter(
-    (key) => !allowedFields.includes(key as typeof allowedFields[number])
+  return Response.json(
+    {
+      error: {
+        code: "INVALID_INPUT",
+        message: "Invalid activity data",
+        issues: parsed.error.issues,
+        fields,
+      },
+    },
+    { status: 400 }
   );
+}
 
-  if (invalidFields.length > 0 || Object.keys(updates).length === 0) {
-    return Response.json(
-      {
-        error: {
-          code: "INVALID_INPUT",
-          message: invalidFields.length > 0
-            ? `Fields cannot be updated: ${invalidFields.join(", ")}`
-            : "At least one field must be provided",
-        },
-      },
-      { status: 400 }
-    );
-  }
-
-  const errors: Record<string, string> = {};
-  const validated: Record<string, string | number | null> = {};
-  const categories = ["food", "sports", "study", "social", "games", "other"];
-
-  if ("title" in updates) {
-    if (
-      typeof updates.title !== "string" ||
-      updates.title.trim().length < 3 ||
-      updates.title.trim().length > 80
-    ) {
-      errors.title = "Title must be 3-80 characters";
-    } else {
-      validated.title = updates.title.trim();
-    }
-  }
-
-  if ("description" in updates) {
-    if (
-      updates.description !== null &&
-      (typeof updates.description !== "string" ||
-        updates.description.length > 1000)
-    ) {
-      errors.description = "Description must be at most 1000 characters";
-    } else {
-      validated.description = updates.description as string | null;
-    }
-  }
-
-  if ("category" in updates) {
-    if (typeof updates.category !== "string" || !categories.includes(updates.category)) {
-      errors.category = `Category must be one of: ${categories.join(", ")}`;
-    } else {
-      validated.category = updates.category;
-    }
-  }
-
-  if ("location_name" in updates) {
-    if (
-      typeof updates.location_name !== "string" ||
-      !updates.location_name.trim()
-    ) {
-      errors.location_name = "Location is required";
-    } else {
-      validated.location_name = updates.location_name.trim();
-    }
-  }
-
-  if ("start_time" in updates) {
-    const start =
-      typeof updates.start_time === "string"
-        ? new Date(updates.start_time)
-        : new Date(NaN);
-
-    if (Number.isNaN(start.getTime()) || start <= new Date()) {
-      errors.start_time = "Start time must be a valid future date";
-    } else {
-      validated.start_time = start.toISOString();
-    }
-  }
-
-  if ("capacity" in updates) {
-    if (
-      !Number.isInteger(updates.capacity) ||
-      (updates.capacity as number) < 2 ||
-      (updates.capacity as number) > 50
-    ) {
-      errors.capacity = "Capacity must be a whole number from 2 to 50";
-    } else {
-      validated.capacity = updates.capacity as number;
-    }
-  }
-
-  if (Object.keys(errors).length > 0) {
-    return Response.json(
-      {
-        error: {
-          code: "INVALID_INPUT",
-          message: "Some fields are invalid",
-          fields: errors,
-        },
-      },
-      { status: 400 }
-    );
-  }
+const validated = parsed.data;
 
   // Fetch the existing activity to check ownership and status.
   const { data: activity, error: lookupError } = await auth.supabase
@@ -318,7 +223,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   }
 
   // Ensure capacity is not reduced below the current membership count.
-  if ("capacity" in validated) {
+  if (validated.capacity !== undefined) {
     const { count, error: countError } = await auth.supabase
       .from("activity_members")
       .select("*", { count: "exact", head: true })
@@ -332,7 +237,7 @@ export async function action({ request, params }: Route.ActionArgs) {
       );
     }
 
-    if ((validated.capacity as number) < count) {
+    if (validated.capacity < count) {
       return Response.json(
         {
           error: {
