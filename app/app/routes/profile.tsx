@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from "react";
 import {
+  Alert,
   Avatar,
   Box,
   Button,
   Card,
   CardContent,
+  Chip,
   Stack,
   TextField,
   Typography,
@@ -12,7 +14,7 @@ import {
 import type { Route } from "./+types/profile";
 import { requireFullProfile } from "~/auth.server";
 import { data, useLoaderData } from "react-router";
-import { Profile, type NewProfile } from "~/lib/schema";
+import { Category, Profile, type NewProfile } from "~/lib/schema";
 import type { User } from "@supabase/supabase-js";
 
 function profileToForm(profile: Profile): NewProfile {
@@ -44,6 +46,8 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile>(loadedProfile);
   const [form, setForm] = useState<NewProfile>(profileToForm(profile));
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   if (!profile) {
     return (
@@ -61,28 +65,52 @@ export default function ProfilePage() {
   function startEditing() {
     if (!profile) return;
     setForm(profileToForm(profile));
+    setSaveError(null);
     setIsEditing(true);
   }
 
   function cancelEditing() {
     if (!profile) return;
     setForm(profileToForm(profile));
+    setSaveError(null);
     setIsEditing(false);
   }
 
-  function saveProfile(event: FormEvent<HTMLFormElement>) {
+  function toggleInterest(interest: Category) {
+    setForm((current) => ({
+      ...current,
+      interests: current.interests.includes(interest)
+        ? current.interests.filter((i) => i !== interest)
+        : [...current.interests, interest],
+    }));
+  }
+
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setProfile((current) =>
-      current
-        ? {
-            ...current,
-            full_name: form.full_name.trim(),
-            bio: form.bio.trim(),
-            interests: form.interests,
-          }
-        : current,
-    );
-    setIsEditing(false);
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      const response = await fetch("/api/profiles", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const json = await response.json();
+
+      if (!response.ok) {
+        const issues = json?.error?.issues?.map((issue: { message: string }) => issue.message).join(" ");
+        setSaveError(issues || json?.error?.message || "Couldn't save your profile");
+        return;
+      }
+
+      setProfile(Profile.parse(json.profile));
+      setIsEditing(false);
+    } catch {
+      setSaveError("Couldn't reach the server, try again");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -105,6 +133,7 @@ export default function ProfilePage() {
                   <Typography variant="h5" component="h2">
                     Edit profile
                   </Typography>
+                  {saveError && <Alert severity="error">{saveError}</Alert>}
                   <TextField
                     label="Full name"
                     value={form.full_name}
@@ -123,15 +152,38 @@ export default function ProfilePage() {
                     multiline
                     minRows={3}
                     fullWidth
+                    slotProps={{ htmlInput: { maxLength: 300 } }}
                   />
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Interests
+                    </Typography>
+                    <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
+                      {Category.options.map((interest) => {
+                        const selected = form.interests.includes(interest);
+                        return (
+                          <Chip
+                            key={interest}
+                            label={interest}
+                            clickable
+                            color={selected ? "primary" : "default"}
+                            variant={selected ? "filled" : "outlined"}
+                            onClick={() => toggleInterest(interest)}
+                          />
+                        );
+                      })}
+                    </Stack>
+                  </Box>
                   <Stack
                     direction="row"
                     spacing={1}
                     sx={{ justifyContent: "flex-end" }}
                   >
-                    <Button onClick={cancelEditing}>Cancel</Button>
-                    <Button type="submit" variant="contained">
-                      Save changes
+                    <Button onClick={cancelEditing} disabled={isSaving}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" variant="contained" disabled={isSaving}>
+                      {isSaving ? "Saving..." : "Save changes"}
                     </Button>
                   </Stack>
                 </Stack>
@@ -171,13 +223,30 @@ export default function ProfilePage() {
                   </Typography>
                 </Box>
 
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Interests
+                  </Typography>
+                  {profile.interests.length > 0 ? (
+                    <Stack direction="row" spacing={1} useFlexGap sx={{ mt: 1, flexWrap: "wrap" }}>
+                      {profile.interests.map((interest) => (
+                        <Chip key={interest} label={interest} color="primary" variant="outlined" />
+                      ))}
+                    </Stack>
+                  ) : (
+                    <Typography sx={{ mt: 0.5 }}>
+                      Add interests so we can show you activities you'll like.
+                    </Typography>
+                  )}
+                </Box>
+
                 {profile.created_at && (
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary">
                       Member since
                     </Typography>
                     <Typography sx={{ mt: 0.5 }}>
-                      {profile.created_at.toLocaleDateString(undefined, {
+                      {new Date(profile.created_at).toLocaleDateString(undefined, {
                         year: "numeric",
                         month: "long",
                         day: "numeric",

@@ -16,9 +16,11 @@ export type Category = z.infer<typeof Category>;
 export const Profile = z.object({
   id: z.uuid(),
   email: z.email(),
-  full_name: z.string().nonempty("Full name is required"),
-  bio: z.string(),
-  interests: Category.array(),
+  full_name: z.string().trim().nonempty("Full name is required").max(80, "Full name must be at most 80 characters"),
+  // bio can be null in the database, so treat null as an empty string
+  bio: z.string().trim().max(300, "Bio must be at most 300 characters").nullish().transform((bio) => bio ?? ""),
+  // stored as an array in Postgres, but duplicates are dropped so it acts like a set
+  interests: Category.array().transform((interests) => [...new Set(interests)]),
   created_at: z.coerce.date(),
 });
 export type Profile = z.infer<typeof Profile>;

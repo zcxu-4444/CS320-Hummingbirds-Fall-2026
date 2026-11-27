@@ -2,57 +2,65 @@ import { getSupabaseForRequest } from "~/lib/supabase.server";
 import type { Route } from "./+types/api.profiles";
 import { NewProfile, Profile } from "~/lib/schema";
 
-// POST /api/profiles
-// Create a new profile for the signed-in user.
+export const PROFILE_FIELDS = "id, email, full_name, bio, interests, created_at";
+
+export function errorResponse(status: number, code: string, message: string, extra?: object) {
+  return Response.json({ error: { code, message, ...extra } }, { status });
+}
+
+// GET /api/profiles isn't supported, use GET /api/profiles/:id to get one profile
+export async function loader() {
+  return errorResponse(405, "METHOD_NOT_ALLOWED", "Use GET /api/profiles/:id to get a profile");
+}
+
+// POST  /api/profiles  creates the signed-in user's profile
+// PATCH /api/profiles  updates full_name, bio and/or interests
 export async function action({ request }: Route.ActionArgs) {
-  if (request.method !== "POST") {
-    return Response.json(
-      {
-        error: {
-          code: "METHOD_NOT_ALLOWED",
-          message: "Use POST to create a new profile",
-        },
-      },
-      { status: 405 },
-    );
+  if (request.method !== "POST" && request.method !== "PATCH") {
+    return errorResponse(405, "METHOD_NOT_ALLOWED", "Use POST to create or PATCH to update your profile");
   }
 
   const auth = await getSupabaseForRequest(request);
+  if (!auth) return errorResponse(401, "NOT_AUTHENTICATED", "Missing or invalid token");
 
-  if (!auth) {
-    return Response.json(
-      {
-        error: {
-          code: "NOT_AUTHENTICATED",
-          message: "Missing or invalid token",
-        },
-      },
-      { status: 401 },
-    );
-  }
-
-  let body: any;
+  let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return Response.json(
-      { error: { code: "INVALID_INPUT", message: "Body must be valid JSON" } },
-      { status: 400 },
-    );
+    return errorResponse(400, "INVALID_INPUT", "Body must be valid JSON");
   }
 
-  let newProfile = NewProfile.safeParse(body);
+  // update: every field is optional, but at least one has to be sent
+  if (request.method === "PATCH") {
+    const updates = NewProfile.partial().safeParse(body);
+    if (!updates.success) {
+      return errorResponse(400, "INVALID_INPUT", "Invalid profile data", { issues: updates.error.issues });
+    }
+    if (Object.keys(updates.data).length === 0) {
+      return errorResponse(400, "INVALID_INPUT", "Nothing to update");
+    }
+
+    const { data, error } = await auth.supabase
+      .from("profiles")
+      .update(updates.data)
+      .eq("id", auth.user.id)
+      .select(PROFILE_FIELDS)
+      .maybeSingle();
+
+    if (error) {
+      console.error("updateProfile failed:", error);
+      return errorResponse(500, "SERVER_ERROR", "Something went wrong updating the profile");
+    }
+    if (!data) return errorResponse(404, "PROFILE_NOT_FOUND", "You haven't created a profile yet");
+
+    return Response.json({ profile: Profile.parse(data) });
+  }
+
+  // create
+  // interests are optional at signup, so default them to an empty list
+  const newProfile = NewProfile.safeParse({ interests: [], ...(body as object) });
   if (!newProfile.success) {
-    return Response.json(
-      {
-        error: {
-          code: "INVALID_INPUT",
-          message: "Invalid profile data",
-          issues: newProfile.error.issues,
-        },
-      },
-      { status: 400 },
-    );
+    return errorResponse(400, "INVALID_INPUT", "Invalid profile data", { issues: newProfile.error.issues });
   }
 
   const { data, error } = await auth.supabase
@@ -61,28 +69,16 @@ export async function action({ request }: Route.ActionArgs) {
       // Important: These both come from the validated auth token, not the user's request body.
       id: auth.user.id,
       email: auth.user.email,
-      full_name: newProfile.data.full_name,
-      bio: newProfile.data.bio,
-      interests: newProfile.data.interests,
-      created_at: new Date(),
+      ...newProfile.data,
     })
-    .select()
+    .select(PROFILE_FIELDS)
     .single();
 
   if (error) {
-    // anything else: log it, but don't send raw db details to the user
-    console.error("profile creation failed:", error);
-    return Response.json(
-      {
-        error: {
-          code: "SERVER_ERROR",
-          message: "Something went wrong creating the profile",
-        },
-      },
-      { status: 500 },
-    );
+    if (error.code === "23505") return errorResponse(409, "PROFILE_ALREADY_EXISTS", "You already have a profile");
+    console.error("createProfile failed:", error);
+    return errorResponse(500, "SERVER_ERROR", "Something went wrong creating the profile");
   }
 
-  const profile = Profile.parse(data);
-  return Response.json({ profile }, { status: 201 });
+  return Response.json({ profile: Profile.parse(data) }, { status: 201 });
 }
