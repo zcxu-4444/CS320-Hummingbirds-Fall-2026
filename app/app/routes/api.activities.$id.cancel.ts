@@ -1,4 +1,4 @@
-import { Activity, Uuid } from "~/lib/schema";
+import { Uuid } from "~/lib/schema";
 import type { Route } from "./+types/api.activities.$id.cancel";
 import { getSupabaseForRequest } from "~/lib/supabase.server";
 
@@ -46,10 +46,10 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   const { data, error: lookupError } = await auth.supabase
     .from("activities")
-    .select("id, host_id, status")
+    .select("id, host_id, status, start_time")
     .eq("id", activityId)
     .maybeSingle();
-  const activity = Activity.parse(data);
+  const activity = data;
 
   if (lookupError) {
     console.error("cancelActivity lookup failed:", lookupError);
@@ -100,16 +100,27 @@ export async function action({ request, params }: Route.ActionArgs) {
     );
   }
 
-  // This was written under the folloqing assumptioN:
-  // Hosts may cancel an activity even after its scheduled start time,
-  // provided its status is still "open".
-  // If this assumption is unreasonable, lmk
+
+// Activities cannot be cancelled at or after their scheduled start time.
+if (new Date(activity.start_time) <= new Date()) {
+  return Response.json(
+    {
+      error: {
+        code: "ACTIVITY_CLOSED",
+        message: "Cannot cancel an activity that has already started",
+      },
+    },
+    { status: 409 },
+  );
+}
+
   const { data: updatedData, error } = await auth.supabase
     .from("activities")
     .update({ status: "cancelled" })
     .eq("id", activityId)
     .eq("host_id", auth.user.id)
     .eq("status", "open")
+    .gt("start_time", new Date().toISOString())
     .select(
       `
       id,
@@ -124,7 +135,7 @@ export async function action({ request, params }: Route.ActionArgs) {
       created_at
     `,
     )
-    .single();
+    .maybeSingle();
 
   if (error) {
     if (error.code === "42501") {
@@ -151,6 +162,17 @@ export async function action({ request, params }: Route.ActionArgs) {
     );
   }
 
-  const updatedActivity = Activity.parse(updatedData);
-  return Response.json({ activity: updatedActivity });
+  if (!updatedData) {
+  return Response.json(
+    {
+      error: {
+        code: "ACTIVITY_CLOSED",
+        message: "Activity was changed or is no longer cancellable",
+      },
+    },
+    { status: 409 },
+  );
+}
+
+return Response.json({ activity: updatedData });
 }
