@@ -57,3 +57,27 @@ export const NewActivity = Activity.pick({
   is_private: true,
 });
 export type NewActivity = z.infer<typeof NewActivity>;
+
+export const UpdateActivity = z.strictObject({
+  title: z.string().trim().min(3).max(80),
+  description: z.string().max(1000).nullable(),
+  category: Category,
+  location_name: z.string().trim().nonempty("Location is required"),
+  start_time: z.string()
+    .refine(
+      (value) => {
+        const date = new Date(value);
+        return !Number.isNaN(date.getTime()) && date > new Date();
+      },
+      { message: "Start time must be a valid future date" }
+    )
+    .transform((value) => new Date(value).toISOString()),
+  capacity: z.number().int().min(2).max(50),
+})
+.partial()
+.refine(
+  (updates) => Object.keys(updates).length > 0,
+  { message: "At least one field must be provided" }
+);
+
+export type UpdateActivity = z.infer<typeof UpdateActivity>;
